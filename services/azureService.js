@@ -120,6 +120,165 @@ class AzureService {
     return token.token;
   }
 
+  /**
+   * Validate service principal permissions
+   * Checks if the service principal has the required roles assigned
+   */
+  async validatePermissions() {
+    try {
+      if (!this.isInitialized) {
+        await this.initialize();
+      }
+
+      if (!this.isInitialized) {
+        return {
+          valid: false,
+          error: 'Azure service not initialized',
+          requiredRoles: this.getRequiredRoles(),
+          fixCommands: this.getFixCommands()
+        };
+      }
+
+      const requiredRoles = this.getRequiredRoles();
+      const validationResults = [];
+      let allValid = true;
+
+      // Test each required permission
+      for (const role of requiredRoles) {
+        try {
+          // Test subscription read permission
+          if (role === 'Reader') {
+            try {
+              await this.makeAzureRequest(`/subscriptions/${this.subscriptionId}`);
+              validationResults.push({
+                role: 'Reader',
+                status: 'valid',
+                message: 'Has subscription read access'
+              });
+            } catch (error) {
+              if (error.status === 403) {
+                allValid = false;
+                validationResults.push({
+                  role: 'Reader',
+                  status: 'missing',
+                  message: error.message,
+                  fixCommand: error.fixCommand
+                });
+              } else {
+                validationResults.push({
+                  role: 'Reader',
+                  status: 'unknown',
+                  message: `Error testing: ${error.message}`
+                });
+              }
+            }
+          }
+
+          // Test cost management permission
+          if (role === 'Cost Management Reader') {
+            try {
+              const query = {
+                type: 'Usage',
+                timeframe: 'TheLastMonth',
+                dataset: {
+                  granularity: 'None',
+                  aggregation: {
+                    totalCost: {
+                      name: 'PreTaxCost',
+                      function: 'Sum'
+                    }
+                  }
+                }
+              };
+              await this.makeAzureRequest(
+                `/subscriptions/${this.subscriptionId}/providers/Microsoft.CostManagement/query`,
+                { 'api-version': '2021-10-01' },
+                'POST',
+                query
+              );
+              validationResults.push({
+                role: 'Cost Management Reader',
+                status: 'valid',
+                message: 'Has cost management read access'
+              });
+            } catch (error) {
+              if (error.status === 403) {
+                allValid = false;
+                validationResults.push({
+                  role: 'Cost Management Reader',
+                  status: 'missing',
+                  message: error.message,
+                  fixCommand: error.fixCommand
+                });
+              } else {
+                validationResults.push({
+                  role: 'Cost Management Reader',
+                  status: 'unknown',
+                  message: `Error testing: ${error.message}`
+                });
+              }
+            }
+          }
+        } catch (error) {
+          allValid = false;
+          validationResults.push({
+            role: role,
+            status: 'error',
+            message: error.message
+          });
+        }
+      }
+
+      return {
+        valid: allValid,
+        clientId: this.clientId,
+        subscriptionId: this.subscriptionId,
+        tenantId: this.tenantId,
+        requiredRoles: requiredRoles,
+        validationResults: validationResults,
+        fixCommands: this.getFixCommands()
+      };
+    } catch (error) {
+      return {
+        valid: false,
+        error: error.message,
+        requiredRoles: this.getRequiredRoles(),
+        fixCommands: this.getFixCommands()
+      };
+    }
+  }
+
+  /**
+   * Get list of required Azure RBAC roles
+   */
+  getRequiredRoles() {
+    return [
+      'Reader',
+      'Cost Management Reader'
+    ];
+  }
+
+  /**
+   * Get fix commands for missing permissions
+   */
+  getFixCommands() {
+    const commands = [];
+    
+    commands.push({
+      role: 'Reader',
+      command: `az role assignment create --assignee "${this.clientId}" --role "Reader" --scope "/subscriptions/${this.subscriptionId}"`,
+      description: 'Grants read access to subscription resources'
+    });
+
+    commands.push({
+      role: 'Cost Management Reader',
+      command: `az role assignment create --assignee "${this.clientId}" --role "Cost Management Reader" --scope "/subscriptions/${this.subscriptionId}"`,
+      description: 'Grants read access to cost management data'
+    });
+
+    return commands;
+  }
+
   async makeAzureRequest(endpoint, params = {}, method = 'GET', data = null) {
     return this.throttledRequest(async () => {
       const maxRetries = 3;
@@ -183,6 +342,56 @@ class AzureService {
               console.log('⚠️ Max retries reached for rate limiting, using fallback data');
               throw new Error('Rate limit exceeded after max retries');
             }
+          }
+          
+          // Handle authorization failures (403) - don't retry, provide clear guidance
+          if (error.response?.status === 403) {
+            const errorData = error.response.data?.error || {};
+            const errorCode = errorData.code || 'AuthorizationFailed';
+            const errorMessage = errorData.message || error.message;
+            
+            // Extract required action from error message
+            const actionMatch = errorMessage.match(/action '([^']+)'/);
+            const requiredAction = actionMatch ? actionMatch[1] : 'unknown';
+            
+            // Map actions to required roles
+            const actionToRoleMap = {
+              'Microsoft.Resources/subscriptions/read': 'Reader',
+              'Microsoft.CostManagement/Query/read': 'Cost Management Reader',
+              'Microsoft.Resources/subscriptions/resourceGroups/read': 'Reader',
+              'Microsoft.Resources/subscriptions/resources/read': 'Reader',
+              'Microsoft.Advisor/recommendations/read': 'Reader'
+            };
+            
+            const requiredRole = actionToRoleMap[requiredAction] || 'Reader';
+            
+            console.error(`\n🔒 AUTHORIZATION FAILED (403)`);
+            console.error(`   Error Code: ${errorCode}`);
+            console.error(`   Error Message: ${errorMessage}`);
+            console.error(`   Required Action: ${requiredAction}`);
+            console.error(`   Required Role: ${requiredRole}`);
+            console.error(`   Client ID: ${this.clientId}`);
+            console.error(`   Subscription ID: ${this.subscriptionId}`);
+            console.error(`\n💡 SOLUTION:`);
+            console.error(`   The service principal does not have the required permissions.`);
+            console.error(`   Run the following command to fix this:`);
+            console.error(`   az role assignment create \\`);
+            console.error(`     --assignee "${this.clientId}" \\`);
+            console.error(`     --role "${requiredRole}" \\`);
+            console.error(`     --scope "/subscriptions/${this.subscriptionId}"`);
+            console.error(`\n   Or run the fix script: ./fix-azure-permissions.sh\n`);
+            
+            // Create enhanced error with guidance
+            const enhancedError = new Error(`Authorization Failed: ${errorMessage}`);
+            enhancedError.status = 403;
+            enhancedError.code = errorCode;
+            enhancedError.requiredAction = requiredAction;
+            enhancedError.requiredRole = requiredRole;
+            enhancedError.clientId = this.clientId;
+            enhancedError.subscriptionId = this.subscriptionId;
+            enhancedError.fixCommand = `az role assignment create --assignee "${this.clientId}" --role "${requiredRole}" --scope "/subscriptions/${this.subscriptionId}"`;
+            
+            throw enhancedError;
           }
           
           // Handle other errors
@@ -256,13 +465,24 @@ class AzureService {
         console.error('❌ Azure API call failed:', apiError.message);
         console.error('❌ API Error details:', JSON.stringify(apiError.response?.data || apiError, null, 2));
         
-        // Fall back to mock data when Azure API fails
+        // If it's an authorization error, don't fall back to mock data - throw it so the API can return proper error
+        if (apiError.status === 403 || apiError.code === 'AuthorizationFailed') {
+          throw apiError;
+        }
+        
+        // Fall back to mock data when Azure API fails for other reasons
         console.log('⚠️ Falling back to mock data due to Azure API failure');
         return this.getMockSubscriptionSummary();
       }
     } catch (error) {
       console.error('❌ Failed to get subscription summary:', error.message);
-      // Fall back to mock data
+      
+      // If it's an authorization error, don't fall back to mock data - throw it
+      if (error.status === 403 || error.code === 'AuthorizationFailed') {
+        throw error;
+      }
+      
+      // Fall back to mock data for other errors
       return this.getMockSubscriptionSummary();
     }
   }
@@ -327,13 +547,24 @@ class AzureService {
         console.error('❌ Azure API call failed:', apiError.message);
         console.error('❌ API Error details:', JSON.stringify(apiError.response?.data || apiError, null, 2));
         
-        // Fall back to mock data when Azure API fails
+        // If it's an authorization error, don't fall back to mock data - throw it so the API can return proper error
+        if (apiError.status === 403 || apiError.code === 'AuthorizationFailed') {
+          throw apiError;
+        }
+        
+        // Fall back to mock data when Azure API fails for other reasons
         console.log('⚠️ Falling back to mock data due to Azure API failure');
         return this.getMockResources(filters);
       }
     } catch (error) {
       console.error('❌ Failed to get resources:', error.message);
-      // Fall back to mock data
+      
+      // If it's an authorization error, don't fall back to mock data - throw it
+      if (error.status === 403 || error.code === 'AuthorizationFailed') {
+        throw error;
+      }
+      
+      // Fall back to mock data for other errors
       return this.getMockResources(filters);
     }
   }
@@ -388,13 +619,24 @@ class AzureService {
         console.error('❌ Azure API call failed:', apiError.message);
         console.error('❌ API Error details:', JSON.stringify(apiError.response?.data || apiError, null, 2));
         
-        // Fall back to mock data when Azure API fails
+        // If it's an authorization error, don't fall back to mock data - throw it so the API can return proper error
+        if (apiError.status === 403 || apiError.code === 'AuthorizationFailed') {
+          throw apiError;
+        }
+        
+        // Fall back to mock data when Azure API fails for other reasons
         console.log('⚠️ Falling back to mock data due to Azure API failure');
         return this.getMockResourceGroups();
       }
     } catch (error) {
       console.error('❌ Failed to get resource groups:', error.message);
-      // Fall back to mock data
+      
+      // If it's an authorization error, don't fall back to mock data - throw it
+      if (error.status === 403 || error.code === 'AuthorizationFailed') {
+        throw error;
+      }
+      
+      // Fall back to mock data for other errors
       return this.getMockResourceGroups();
     }
   }
@@ -455,11 +697,25 @@ class AzureService {
         }
       } catch (apiError) {
         console.error('❌ Cost Management API failed:', apiError.message);
+        
+        // If it's an authorization error, don't fall back to mock data - throw it so the API can return proper error
+        if (apiError.status === 403 || apiError.code === 'AuthorizationFailed') {
+          throw apiError;
+        }
+        
+        // Fall back to mock data when Azure API fails for other reasons
         console.log('⚠️ Falling back to mock cost data');
         return this.getMockCosts(timeframe);
       }
     } catch (error) {
       console.error('❌ Failed to get costs:', error.message);
+      
+      // If it's an authorization error, don't fall back to mock data - throw it
+      if (error.status === 403 || error.code === 'AuthorizationFailed') {
+        throw error;
+      }
+      
+      // Fall back to mock data for other errors
       return this.getMockCosts(timeframe);
     }
   }
@@ -602,11 +858,25 @@ class AzureService {
         }
       } catch (apiError) {
         console.error('❌ Cost Management API failed for trends:', apiError.message);
+        
+        // If it's an authorization error, don't fall back to mock data - throw it so the API can return proper error
+        if (apiError.status === 403 || apiError.code === 'AuthorizationFailed') {
+          throw apiError;
+        }
+        
+        // Fall back to mock data when Azure API fails for other reasons
         console.log('⚠️ Falling back to mock cost trends');
         return this.getMockCostTrends(days);
       }
     } catch (error) {
       console.error('❌ Failed to get cost trends:', error.message);
+      
+      // If it's an authorization error, don't fall back to mock data - throw it
+      if (error.status === 403 || error.code === 'AuthorizationFailed') {
+        throw error;
+      }
+      
+      // Fall back to mock data for other errors
       return this.getMockCostTrends(days);
     }
   }

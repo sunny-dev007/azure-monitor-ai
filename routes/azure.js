@@ -22,6 +22,24 @@ router.use(async (req, res, next) => {
   }
 });
 
+// Validate permissions endpoint
+router.get('/validate-permissions', async (req, res) => {
+  try {
+    const validation = await azureService.validatePermissions();
+    res.json({
+      success: true,
+      data: validation
+    });
+  } catch (error) {
+    console.error('Failed to validate permissions:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to validate permissions',
+      details: error.message
+    });
+  }
+});
+
 // Get subscription summary
 router.get('/summary', async (req, res) => {
   try {
@@ -32,6 +50,25 @@ router.get('/summary', async (req, res) => {
     });
   } catch (error) {
     console.error('Failed to get subscription summary:', error);
+    
+    // Handle authorization errors specifically
+    if (error.status === 403 || error.code === 'AuthorizationFailed') {
+      return res.status(403).json({
+        success: false,
+        error: 'Authorization Failed',
+        code: error.code || 'AuthorizationFailed',
+        message: error.message,
+        details: {
+          requiredAction: error.requiredAction,
+          requiredRole: error.requiredRole,
+          clientId: error.clientId,
+          subscriptionId: error.subscriptionId,
+          fixCommand: error.fixCommand,
+          help: 'The service principal does not have the required permissions. Please run the fix command or use ./fix-azure-permissions.sh script.'
+        }
+      });
+    }
+    
     res.status(500).json({
       success: false,
       error: 'Failed to get subscription summary',
@@ -56,6 +93,25 @@ router.get('/resources', async (req, res) => {
     });
   } catch (error) {
     console.error('Failed to get resources:', error);
+    
+    // Handle authorization errors specifically
+    if (error.status === 403 || error.code === 'AuthorizationFailed') {
+      return res.status(403).json({
+        success: false,
+        error: 'Authorization Failed',
+        code: error.code || 'AuthorizationFailed',
+        message: error.message,
+        details: {
+          requiredAction: error.requiredAction,
+          requiredRole: error.requiredRole,
+          clientId: error.clientId,
+          subscriptionId: error.subscriptionId,
+          fixCommand: error.fixCommand,
+          help: 'The service principal does not have the required permissions. Please run the fix command or use ./fix-azure-permissions.sh script.'
+        }
+      });
+    }
+    
     res.status(500).json({
       success: false,
       error: 'Failed to get resources',
@@ -74,6 +130,25 @@ router.get('/resource-groups', async (req, res) => {
     });
   } catch (error) {
     console.error('Failed to get resource groups:', error);
+    
+    // Handle authorization errors specifically
+    if (error.status === 403 || error.code === 'AuthorizationFailed') {
+      return res.status(403).json({
+        success: false,
+        error: 'Authorization Failed',
+        code: error.code || 'AuthorizationFailed',
+        message: error.message,
+        details: {
+          requiredAction: error.requiredAction,
+          requiredRole: error.requiredRole,
+          clientId: error.clientId,
+          subscriptionId: error.subscriptionId,
+          fixCommand: error.fixCommand,
+          help: 'The service principal does not have the required permissions. Please run the fix command or use ./fix-azure-permissions.sh script.'
+        }
+      });
+    }
+    
     res.status(500).json({
       success: false,
       error: 'Failed to get resource groups',
@@ -93,6 +168,25 @@ router.get('/costs', async (req, res) => {
     });
   } catch (error) {
     console.error('Failed to get costs:', error);
+    
+    // Handle authorization errors specifically
+    if (error.status === 403 || error.code === 'AuthorizationFailed') {
+      return res.status(403).json({
+        success: false,
+        error: 'Authorization Failed',
+        code: error.code || 'AuthorizationFailed',
+        message: error.message,
+        details: {
+          requiredAction: error.requiredAction,
+          requiredRole: error.requiredRole,
+          clientId: error.clientId,
+          subscriptionId: error.subscriptionId,
+          fixCommand: error.fixCommand,
+          help: 'The service principal does not have the required permissions. Please run the fix command or use ./fix-azure-permissions.sh script.'
+        }
+      });
+    }
+    
     res.status(500).json({
       success: false,
       error: 'Failed to get costs',
@@ -112,6 +206,25 @@ router.get('/costs/trends', async (req, res) => {
     });
   } catch (error) {
     console.error('Failed to get cost trends:', error);
+    
+    // Handle authorization errors specifically
+    if (error.status === 403 || error.code === 'AuthorizationFailed') {
+      return res.status(403).json({
+        success: false,
+        error: 'Authorization Failed',
+        code: error.code || 'AuthorizationFailed',
+        message: error.message,
+        details: {
+          requiredAction: error.requiredAction,
+          requiredRole: error.requiredRole,
+          clientId: error.clientId,
+          subscriptionId: error.subscriptionId,
+          fixCommand: error.fixCommand,
+          help: 'The service principal does not have the required permissions. Please run the fix command or use ./fix-azure-permissions.sh script.'
+        }
+      });
+    }
+    
     res.status(500).json({
       success: false,
       error: 'Failed to get cost trends',

@@ -100,6 +100,17 @@ az ad sp create-for-rbac \
   --role "Reader" \
   --scopes "/subscriptions/YOUR_SUBSCRIPTION_ID" \
   --sdk-auth
+
+# IMPORTANT: Also assign Cost Management Reader role
+az role assignment create \
+  --assignee "YOUR_CLIENT_ID" \
+  --role "Cost Management Reader" \
+  --scope "/subscriptions/YOUR_SUBSCRIPTION_ID"
+```
+
+**Or use the automated setup script:**
+```bash
+./setup-azure.sh
 ```
 
 #### Enable Required APIs
@@ -211,9 +222,15 @@ The application will be available at:
 
 ### **Azure Permissions**
 The service principal needs these roles:
-- **Reader** at subscription level
-- **Cost Management Reader** for cost analysis
-- **Monitoring Reader** for metrics
+- **Reader** at subscription level (for resource access)
+- **Cost Management Reader** for cost analysis (required for cost queries)
+
+**If you encounter authorization errors (403), run:**
+```bash
+./fix-azure-permissions.sh
+```
+
+This script will automatically assign all required roles. See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for detailed information.
 
 ### **OpenAI Model Configuration**
 - **Model**: GPT-4 or GPT-4o-mini
@@ -309,12 +326,25 @@ npm run test:integration
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🆘 Support
+## 🆘 Support & Troubleshooting
 
+- **Troubleshooting Guide**: See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for common issues and solutions
+- **Permission Issues**: Run `./fix-azure-permissions.sh` to fix authorization errors
 - **Documentation**: Check this README and inline code comments
 - **Issues**: Report bugs via GitHub Issues
 - **Discussions**: Join community discussions
 - **Email**: Contact the development team
+
+### Common Issues
+
+1. **Authorization Failed (403)**: Service principal missing required roles
+   - **Solution**: Run `./fix-azure-permissions.sh` or see [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
+
+2. **Cost Management API 403**: Missing "Cost Management Reader" role
+   - **Solution**: `az role assignment create --assignee "$CLIENT_ID" --role "Cost Management Reader" --scope "/subscriptions/$SUBSCRIPTION_ID"`
+
+3. **Different Azure Account Issues**: Roles need to be assigned in each subscription
+   - **Solution**: Use the fix script in the correct subscription context
 
 ## 🔮 Roadmap
 
