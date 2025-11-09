@@ -39,3 +39,9 @@ coverage/
 *.tmp
 *.temp
 
+
+# Local environment switch scripts with credentials
+switch-to-azure-central.sh
+SWITCH-NOW.md
+RUN-THIS-NOW.md
+.env.backup.*
