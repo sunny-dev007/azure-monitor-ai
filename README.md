@@ -2,6 +2,22 @@
 
 A comprehensive AI-powered chatbot application that helps you analyze, optimize, and manage your Azure resources with intelligent insights and cost optimization recommendations.
 
+## 🌟 New: Web-Based Environment Switcher
+
+**Switch between Azure environments with an intuitive web interface!** No more command-line scripts or manual `.env` editing.
+
+### Key Features:
+- 🎨 **Beautiful Visual Interface** - Modern, responsive UI with real-time progress tracking
+- ✅ **Automatic Validation** - Test credentials before switching
+- 🔐 **Permission Management** - One-click role assignment
+- 📊 **Progress Visibility** - See every step as it happens
+- 💾 **Auto Backup** - Your `.env` is automatically backed up
+- 🚀 **Quick Switch** - Select from saved environments
+
+📖 **[Read the full Environment Switcher Guide →](./ENVIRONMENT-SWITCHER.md)**
+
+🎬 **[View the Demo Guide →](./DEMO-ENVIRONMENT-SWITCHER.md)**
+
 ## ✨ Features
 
 ### 🤖 **AI-Powered Intelligence**
@@ -384,3 +400,16 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ---
 
 **Built with ❤️ for the Azure community**
+
+
+# Amit Azure Configuration ######
+ClientID=1f16c4c4-8c61-4083-bda0-b5cd4f847dff
+TenantID=a8f047ad-e0cb-4b81-badd-4556c4cd71f4
+ClientSecretID=<YOUR_CLIENT_SECRET>
+SubscriptionID=5588ec4e-3711-4cd3-a62a-52d031b0a6c8
+
+### My Account Cred for Application
+AZURE_TENANT_ID=d4740603-c108-4cbe-9be8-c75289d4da2a
+AZURE_CLIENT_ID=699e9e0b-c260-4f6f-968a-67fbd24be352
+AZURE_CLIENT_SECRET=<YOUR_CLIENT_SECRET>
+AZURE_SUBSCRIPTION_ID=a06001b5-a47c-44ac-b403-8be695f05440

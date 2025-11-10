@@ -52,6 +52,8 @@ app.get('/api/health', (req, res) => {
 app.use('/api/azure', require('./routes/azure'));
 app.use('/api/ai', require('./routes/ai'));
 app.use('/api/chat', require('./routes/chat'));
+app.use('/api/environment', require('./routes/environment'));
+app.use('/api/ai-agent', require('./routes/aiAgent'));
 
 // Serve static files only in production
 if (process.env.NODE_ENV === 'production') {

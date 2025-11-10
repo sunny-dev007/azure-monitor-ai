@@ -1,25 +1,28 @@
 {
   "name": "azure-ai-assistant-client",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@azure/msal-browser": "^3.7.1",
+    "@azure/msal-react": "^2.0.9",
+    "@testing-library/jest-dom": "^5.17.0",
+    "@testing-library/react": "^13.4.0",
+    "@testing-library/user-event": "^13.5.0",
+    "axios": "^1.6.2",
+    "framer-motion": "^10.16.16",
+    "lucide-react": "^0.294.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-scripts": "5.0.1",
-    "react-router-dom": "^6.20.1",
-    "axios": "^1.6.2",
-    "socket.io-client": "^4.7.4",
-    "recharts": "^2.8.0",
-    "lucide-react": "^0.294.0",
-    "clsx": "^2.0.0",
-    "tailwind-merge": "^2.0.0",
-    "framer-motion": "^10.16.16",
     "react-hot-toast": "^2.4.1",
-    "react-hook-form": "^7.48.2",
+    "react-markdown": "^9.1.0",
     "react-query": "^3.39.3",
-    "date-fns": "^2.30.0",
-    "react-markdown": "^9.0.1",
-    "react-syntax-highlighter": "^15.5.0"
+    "react-router-dom": "^6.20.1",
+    "react-scripts": "5.0.1",
+    "recharts": "^2.10.3",
+    "rehype-raw": "^7.0.0",
+    "remark-gfm": "^4.0.1",
+    "socket.io-client": "^4.5.4",
+    "web-vitals": "^2.1.4"
   },
   "scripts": {
     "start": "react-scripts start",
@@ -44,11 +47,6 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
-  },
-  "devDependencies": {
-    "tailwindcss": "^3.3.6",
-    "autoprefixer": "^10.4.16",
-    "postcss": "^8.4.32"
   },
   "proxy": "http://localhost:5000"
 }

@@ -12,7 +12,9 @@ import {
   RefreshCw,
   Cloud,
   Zap,
-  BarChart3
+  BarChart3,
+  CloudCog,
+  Bot
 } from 'lucide-react';
 import { useAzure } from '../../context/AzureContext';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -25,10 +27,12 @@ const Layout = ({ children }) => {
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { name: 'AI Chat', href: '/chat', icon: MessageSquare },
+    { name: 'AI Agent', href: '/ai-agent', icon: Bot, highlight: true, badge: 'NEW' },
     { name: 'Resources', href: '/resources', icon: Server },
     { name: 'Resources Overview', href: '/resources-overview', icon: BarChart3 },
     { name: 'Costs', href: '/costs', icon: DollarSign },
     { name: 'Recommendations', href: '/recommendations', icon: Lightbulb },
+    { name: 'Environment Switcher', href: '/environment-switcher', icon: CloudCog, highlight: true },
     { name: 'Settings', href: '/settings', icon: Settings },
   ];
 
@@ -105,11 +109,16 @@ const Layout = ({ children }) => {
               <Link
                 key={item.name}
                 to={item.href}
-                className={`sidebar-item ${isActive(item.href) ? 'active' : ''}`}
+                className={`sidebar-item ${isActive(item.href) ? 'active' : ''} ${
+                  item.highlight ? 'bg-gradient-to-r from-blue-50 to-purple-50 border-l-4 border-blue-500 font-semibold' : ''
+                }`}
                 onClick={() => setSidebarOpen(false)}
               >
-                <Icon className="w-5 h-5 mr-3" />
+                <Icon className={`w-5 h-5 mr-3 ${item.highlight ? 'text-blue-600' : ''}`} />
                 {item.name}
+                {item.highlight && (
+                  <span className="ml-auto text-xs px-2 py-1 bg-blue-600 text-white rounded-full">New</span>
+                )}
               </Link>
             );
           })}

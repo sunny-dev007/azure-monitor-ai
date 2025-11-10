@@ -12,6 +12,8 @@ import ResourcesOverview from './pages/ResourcesOverview';
 import Costs from './pages/Costs';
 import Recommendations from './pages/Recommendations';
 import Settings from './pages/Settings';
+import EnvironmentSwitcher from './pages/EnvironmentSwitcher';
+import AIAgent from './pages/AIAgent';
 
 // Context
 import { AzureProvider } from './context/AzureContext';
@@ -62,11 +64,13 @@ function App() {
                   <Route path="/" element={<Navigate to="/dashboard" replace />} />
                   <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/chat" element={<Chat />} />
+                  <Route path="/ai-agent" element={<AIAgent />} />
                   <Route path="/resources" element={<Resources />} />
                   <Route path="/resources-overview" element={<ResourcesOverview />} />
                   <Route path="/costs" element={<Costs />} />
                   <Route path="/recommendations" element={<Recommendations />} />
                   <Route path="/settings" element={<Settings />} />
+                  <Route path="/environment-switcher" element={<EnvironmentSwitcher />} />
                 </Routes>
               </Layout>
               <Toaster

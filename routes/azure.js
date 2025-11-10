@@ -5,6 +5,28 @@ const AzureService = require('../services/azureService');
 // Create an instance of Azure service
 const azureService = new AzureService();
 
+// Get current environment info (no authentication needed)
+router.get('/current-environment', async (req, res) => {
+  try {
+    res.json({
+      success: true,
+      data: {
+        tenantId: process.env.AZURE_TENANT_ID,
+        clientId: process.env.AZURE_CLIENT_ID,
+        subscriptionId: process.env.AZURE_SUBSCRIPTION_ID,
+        timestamp: new Date().toISOString(),
+        serverUptime: Math.floor(process.uptime()),
+        serverStartTime: new Date(Date.now() - process.uptime() * 1000).toISOString()
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 // Initialize Azure service middleware
 router.use(async (req, res, next) => {
   try {
