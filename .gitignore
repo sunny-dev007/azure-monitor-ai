@@ -45,3 +45,6 @@ switch-to-azure-central.sh
 SWITCH-NOW.md
 RUN-THIS-NOW.md
 .env.backup.*
+
+# Frontend files with hardcoded credentials (local only)
+client/src/pages/EnvironmentSwitcher.js
